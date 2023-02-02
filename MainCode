@@ -1,0 +1,42 @@
+import subprocess
+
+# Get all CloudTrail events
+cloudtrail_events = subprocess.run(
+    "aws cloudtrail lookup-events --query Events[*].{EventName:EventName,Username:Username,SourceIPAddress:SourceIPAddress} --output json",
+    shell=True,
+    capture_output=True,
+    text=True
+).stdout
+
+# Filter events to identify compromised AWS Buckets
+compromised_buckets = subprocess.run(
+    f"echo '{cloudtrail_events}' | jq -r 'select(.EventName == \"CreateBucket\") | .[] | [.Username, .SourceIPAddress]'",
+    shell=True,
+    capture_output=True,
+    text=True
+).stdout
+
+print("Compromised AWS Buckets:")
+print(compromised_buckets)
+
+# Filter events to identify compromised IAM Users
+compromised_iam_users = subprocess.run(
+    f"echo '{cloudtrail_events}' | jq -r 'select(.EventName == \"CreateUser\") | .[] | [.Username, .SourceIPAddress]'",
+    shell=True,
+    capture_output=True,
+    text=True
+).stdout
+
+print("Compromised IAM Users:")
+print(compromised_iam_users)
+
+# Filter events to identify other indicators of compromise
+indicators_of_compromise = subprocess.run(
+    f"echo '{cloudtrail_events}' | jq -r 'select(.EventName == \"PutBucketPolicy\") | .[] | [.Username, .SourceIPAddress]'",
+    shell=True,
+    capture_output=True,
+    text=True
+).stdout
+
+print("Indicators of compromise:")
+print(indicators_of_compromise)
